@@ -97,7 +97,7 @@ unique(datos$ccaa)
 ```
 
 ```{r}
-CCAA <- c("Extremadura", "Galicia", "Canarias", "Cataluña")
+CCAA <- c("Extremadura", "Galicia", "Canarias", "Cataluña", "País Vasco")
 datos$Provincia <- ifelse(datos$Provincia %in% CCAA, "", datos$Provincia)
 unique(datos$Provincia)
 ```
@@ -107,5 +107,25 @@ Para evitar confusiones en los adjudicatarios, se va a poner todo en mayúsculas
 ```{r}
 datos$adjudicatario <- toupper(datos$adjudicatario)
 head(datos$adjudicatario)
+```
+
+Vamos a modificar ahora el campo que nos indica la temática del contrato, codigo_cpv. Se van a eliminar los corchetes y a quedarnos solo con el texto.
+
+```{r}
+datos$codigo <- str_remove_all(datos$codigo_cpv, "[[:digit:]]")
+datos$codigo <- str_remove_all(datos$codigo, "\\-")
+datos$codigo <- str_remove_all(datos$codigo, "\\{")
+datos$codigo_cpv <- str_remove_all(datos$codigo, "\\}")
+datos$codigo_cpv <- str_trim(datos$codigo_cpv)
+datos$codigo_cpv <- str_remove_all(datos$codigo_cpv, "\\.")
+datos <- datos[,!names(datos) %in% c("codigo") ]
+unique(datos$codigo_cpv)
+```
+
+
+Por último, exportamos el fichero para trabajar con los datos finales.
+
+```{r}
+write.csv(datos, "./contratacion_publica.csv", sep = ",")
 ```
 
