@@ -1,0 +1,111 @@
+---
+title: "PRA2-Preprocesado de datos"
+author: "Yésica Fernández"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# https://cran.r-project.org/web/packages/dplyr/index.html
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+# https://cran.r-project.org/web/packages/tidyr/index.html
+if (!require('tidyr')) install.packages('tidyr'); library('tidyr')
+# https://cran.r-project.org/web/packages/stringr/index.html
+if (!require('stringr')) install.packages('stringr'); library('stringr')
+```
+
+
+# Introducción
+
+Se va a realizar la limpieza y preprocesado del archivo de datos de la práctica 2 de la asignatura Visualización de datos de máster en ciencia de datos de la UOC.
+
+Para ello, realizamos la carga del archivo y un resumen de los datos, para ver con qué contamos.
+
+```{r}
+datos <- read.csv("./contratacion-publica-sample.csv", sep = ",", fileEncoding = "UTF-8", stringsAsFactors = TRUE)
+head(datos)
+```
+
+```{r}
+summary(datos)
+```
+En primer lugar, vamos a tratar el lugar de ejecucción. Este viene separado por guiones, de tal manera que nos indica País, provincia, lugar. Vamos a separar esta columna en 3.
+
+```{r}
+datos$Pais <- str_trim(str_split_fixed(datos$lugar_ejecucion, "-", 3)[,1])
+datos$Provincia <- str_trim(str_split_fixed(datos$lugar_ejecucion, "-", 3)[,2])
+datos$Lugar <- str_trim(str_split_fixed(datos$lugar_ejecucion, "-", 3)[,3])
+
+```
+
+```{r}
+unique(datos$Provincia)
+```
+
+
+Si vemos las provincias, se puede observar que la misma provincia puede tomar varios nombres, por lo que vamos a unificarlos.
+
+
+```{r}
+datos$Provincia <- ifelse(datos$Provincia == "La Coruña", "A Coruña", datos$Provincia)
+datos$Provincia <- ifelse(datos$Provincia == "Valencia/València", "Valencia", datos$Provincia)
+datos$Provincia <- ifelse(datos$Provincia == "Valencia / València", "Valencia", datos$Provincia)
+datos$Provincia <- ifelse(datos$Provincia == "Ourense (Orense)", "Ourense", datos$Provincia)
+datos$Provincia <- ifelse(datos$Provincia == "Alicante/Alacant", "Alicante", datos$Provincia)
+datos$Provincia <- ifelse(datos$Provincia == "Comunidad de Madrid", "Madrid", datos$Provincia)
+datos$Provincia <- ifelse(datos$Provincia == "Araba/Álava", "Álava", datos$Provincia)
+datos$Provincia <- ifelse(datos$Provincia == "Gipuzkoa", "Guipúzcoa", datos$Provincia)
+unique(datos$Provincia)
+```
+
+Como alguna contiene la comunidad autónoma, se va a crear una nueva columna con la comunidad autónoma. Posteriormente estas en la columna provincia se pondrán en blanco.
+
+```{r}
+Galicia <- c("A Coruña", "Lugo", "Ourense", "Pontevedra", "Galicia")
+datos$ccaa <- ifelse(datos$Provincia %in% Galicia, "Galicia", "" )
+datos$ccaa <- ifelse(datos$Provincia == "Asturias", "Principado de Asturias", datos$ccaa)
+datos$ccaa <- ifelse(datos$Provincia == "Cantabria", "Cantabria", datos$ccaa)
+Pais_vasco <- c("Álava", "Guipúzcoa", "Bizkaia", "País Vasco")
+datos$ccaa <- ifelse(datos$Provincia %in% Pais_vasco, "País Vasco", datos$ccaa)
+datos$ccaa <- ifelse(datos$Provincia == "Navarra", "Comunidad Foral de Navarra", datos$ccaa)
+Castilla_Leon <- c("León", "Palencia", "Zamora", "Burgos", "Valladolid", "Soria", "Segovia", "Salamanca", "Ávila")
+datos$ccaa <- ifelse(datos$Provincia %in% Castilla_Leon, "Castilla León", datos$ccaa)
+datos$ccaa <- ifelse(datos$Provincia == "La Rioja", "La Rioja", datos$ccaa)
+Aragon <- c("Huesca", "Zaragoza", "Teruel")
+datos$ccaa <- ifelse(datos$Provincia %in% Aragon, "Aragón", datos$ccaa)
+Cataluña <- c("Cataluña", "Lleida", "Barcelona", "Tarragona")
+datos$ccaa <- ifelse(datos$Provincia %in% Cataluña, "Cataluña", datos$ccaa)
+datos$ccaa <- ifelse(datos$Provincia == "Madrid", "Comunidad de Madrid", datos$ccaa)
+Castilla_mancha <- c("Guadalajara", "Cuenca", "Toledo", "Albacete", "Ciudad Real")
+datos$ccaa <- ifelse(datos$Provincia %in% Castilla_mancha, "Castilla la Mancha", datos$ccaa)
+Extremadura <- c("Cáceres", "Badajoz", "Extremadura")
+datos$ccaa <- ifelse(datos$Provincia %in% Extremadura, "Extremadura", datos$ccaa)
+Valencia <- c("Castellón", "Valencia", "Alicante")
+datos$ccaa <- ifelse(datos$Provincia %in% Valencia, "Comunidad Valenciana", datos$ccaa)
+Andalucia <- c("Huelva", "Córdoba", "Jaén", "Sevilla", "Málaga", "Cádiz", "Granada", "Almería")
+datos$ccaa <- ifelse(datos$Provincia %in% Andalucia, "Andalucía", datos$ccaa)
+Islas_baleares <- c("Mallorca", "Menorca", "Illes Balears")
+datos$ccaa <- ifelse(datos$Provincia %in% Islas_baleares, "Islas Baleares", datos$ccaa)
+Islas_canarias <- c("Tenerife", "Canarias", "La Palma")
+datos$ccaa <- ifelse(datos$Provincia %in% Islas_canarias, "Islas Canarias", datos$ccaa)
+datos$ccaa <- ifelse(datos$Provincia == "Ceuta", "Ceuta", datos$ccaa)
+unique(datos$ccaa)
+```
+
+```{r}
+CCAA <- c("Extremadura", "Galicia", "Canarias", "Cataluña")
+datos$Provincia <- ifelse(datos$Provincia %in% CCAA, "", datos$Provincia)
+unique(datos$Provincia)
+```
+
+Para evitar confusiones en los adjudicatarios, se va a poner todo en mayúsculas.
+
+```{r}
+datos$adjudicatario <- toupper(datos$adjudicatario)
+head(datos$adjudicatario)
+```
+
